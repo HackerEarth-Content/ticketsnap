@@ -16,10 +16,15 @@ from pipeline.models import NormalizedTicket
 
 _SYNC_FLOOR_MS = int(datetime.fromisoformat(settings.SYNC_FLOOR).timestamp() * 1000)
 
+# Serializes syncs so the 10-minute scheduled run (see main.py's _sync_forever)
+# and a manual "sync now" request never race each other's DB writes.
+_sync_lock = asyncio.Lock()
 
-async def run_incremental() -> dict:
-    await db_manager.initialize()
-    try:
+
+async def trigger_sync() -> dict:
+    """Runs one incremental sync. Assumes db_manager is already initialized
+    (true both inside the running FastAPI app and via run_incremental below)."""
+    async with _sync_lock:
         async with db_manager.session_factory()() as session:
             cursor = await get_cursor(session)
         since_ms = max(
@@ -40,6 +45,14 @@ async def run_incremental() -> dict:
             await set_cursor(session, started_at)
 
         return {"pulled": len(tickets), "since_ms": since_ms}
+
+
+async def run_incremental() -> dict:
+    """CLI entrypoint: initializes its own DB connection (the running app
+    initializes db_manager itself, see main.py's lifespan)."""
+    await db_manager.initialize()
+    try:
+        return await trigger_sync()
     finally:
         await db_manager.close()
 

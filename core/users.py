@@ -1,7 +1,5 @@
 """Google OAuth + fastapi-users wiring. Mirrors Ticket-Hub's core/users.py --
-same allowlist behavior, same cookie/JWT backend -- trimmed to Google-only
-(Ticket-Hub also supports a plain username/password backend ticketsnap
-doesn't need)."""
+same allowlist behavior, same cookie/JWT backend -- trimmed to Google-only"""
 
 from __future__ import annotations
 

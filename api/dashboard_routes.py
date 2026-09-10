@@ -16,7 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_session
 from core.orm import FeatureComponent, Ticket
 from core.users import current_active_user
+from pipeline.db_writer import get_cursor
 from pipeline.models import CONTENT_REQUEST_PREFIX, ONCALL_WORKFLOW, PRIORITY_ORDER, extract_reported_by
+from pipeline.sync import trigger_sync
 
 router = APIRouter(prefix="/dashboard")
 
@@ -221,6 +223,29 @@ async def content_requests(
     tickets = await _fetch_bucket(session, period, content_request=True)
     fcs = await _feature_components(session)
     return _serialize(tickets, fcs)
+
+
+# Manual override for the 10-minute background sync (see main.py's
+# _sync_forever) -- shares its lock via pipeline.sync.trigger_sync, so this
+# never races the scheduled run.
+@router.post("/sync")
+async def sync_now(user=Depends(current_active_user)):
+    return await trigger_sync()
+
+
+@router.get("/sync-status")
+async def sync_status(
+    session: AsyncSession = Depends(get_session),
+    user=Depends(current_active_user),
+):
+    last_synced_at = await get_cursor(session)
+    # sync_cursors.last_synced_at is a naive column but always written as UTC
+    # (see pipeline/sync.py) -- attach tzinfo so the serialized ISO string
+    # carries an offset, or the browser parses it as local time (see _days_open
+    # above for the same fixup on Ticket's naive columns).
+    if last_synced_at is not None and last_synced_at.tzinfo is None:
+        last_synced_at = last_synced_at.replace(tzinfo=timezone.utc)
+    return {"last_synced_at": last_synced_at}
 
 
 @router.get("/engineering-issues")

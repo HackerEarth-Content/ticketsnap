@@ -2,11 +2,40 @@
 
 from __future__ import annotations
 
+import json
+import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _load_secrets_manager_env() -> None:
+    """Pulls the prod/ticketsnap secret (HubSpot key, DATABASE_URL,
+    USER_SECRET, Google OAuth creds, ...) into the process env before
+    Settings reads it below. Only runs in production -- local dev keeps
+    using .env untouched. setdefault so an explicitly-set env var (e.g. a
+    compose override) still wins over the secret.
+    """
+    import boto3
+    from botocore.exceptions import ClientError
+
+    secret_name = os.environ.get("AWS_SECRET_NAME", "prod/ticketsnap")
+    region_name = os.environ.get("AWS_REGION", "ap-south-1")
+
+    client = boto3.session.Session().client(service_name="secretsmanager", region_name=region_name)
+    try:
+        response = client.get_secret_value(SecretId=secret_name)
+    except ClientError as e:
+        raise e
+
+    for key, value in json.loads(response["SecretString"]).items():
+        os.environ.setdefault(key, str(value))
+
+
+if os.environ.get("ENVIRONMENT") == "production":
+    _load_secrets_manager_env()
+
+
 class Settings(BaseSettings):
-    # HubSpot private-app token (same token as Ticket-Hub, per instruction).
     HUBSPOT_SERVICE_KEY: str
 
     DATABASE_URL: str
@@ -21,16 +50,11 @@ class Settings(BaseSettings):
     USER_SECRET: str
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
-    API_BASE_URL: str = "http://localhost:8000"
-    # Where the OAuth callback sends the browser after login (success or
-    # failure) -- Ticket-Hub's core/config.py has the same setting. In prod,
-    # where the built frontend is served from this same FastAPI app (see
-    # main.py), this can just equal API_BASE_URL; in dev it's the Vite dev
-    # server, not this backend, so it needs its own value.
-    FRONTEND_URL: str = "http://localhost:5173"
+    API_BASE_URL: str
+
+    FRONTEND_URL: str
     ENVIRONMENT: str = "development"
-    # Comma-separated Google account emails allowed past the
-    # Engineering Issues gate. Empty means any Google account can sign in.
+
     ALLOWED_EMAILS: str = ""
 
     model_config = SettingsConfigDict(

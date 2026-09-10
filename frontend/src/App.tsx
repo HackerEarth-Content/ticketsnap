@@ -67,6 +67,40 @@ export default function App() {
   const [bucket, setBucket] = useState<TicketBucket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  // Bumped after a manual sync completes to re-trigger the fetch effects below.
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Refreshes on login and again after a manual sync (via refreshKey) so the
+  // header's "Synced Xm ago" label stays current.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    api
+      .syncStatus()
+      .then((s) => {
+        if (!cancelled) setLastSyncedAt(s.last_synced_at);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, refreshKey]);
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      await api.syncNow();
+      setRefreshKey((k) => k + 1);
+    } catch {
+      // ponytail: no toast system here; the fetch-error banner below covers
+      // load failures, and a failed syncNow just leaves current data as-is.
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   const [fcParam, setFcParam] = useQueryParam("fc", "", "");
   const activeFeatureComponent = fcParam || null;
   const [priorityParam, setPriorityParam] = useQueryParam("priority", "", "");
@@ -102,7 +136,7 @@ export default function App() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, period, user]);
+  }, [tab, period, user, refreshKey]);
 
   if (authLoading) {
     return <div className="loading-state">Loading…</div>;
@@ -111,15 +145,6 @@ export default function App() {
   if (!user) {
     return (
       <div className="wrap">
-        <Header
-          period={period}
-          onPeriodChange={setPeriodParam}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          user={user}
-          onLogout={logout}
-          showSignIn={false}
-        />
         <div className="signin-gate">
           <img
             className="signin-gate-mark"
@@ -127,7 +152,6 @@ export default function App() {
             alt=""
           />
           <h2>Sign in to view TicketSnap</h2>
-          <p>Use your HackerEarth Google account to see engineering and content tickets.</p>
           {authErrorMessage && <div className="error-banner signin-gate-error">{authErrorMessage}</div>}
           <a className="signin-btn signin-btn-large" href="/api/auth/google/login">
             <svg width="20" height="20" viewBox="0 0 18 18" aria-hidden="true">
@@ -164,6 +188,9 @@ export default function App() {
         onToggleTheme={toggleTheme}
         user={user}
         onLogout={logout}
+        onSyncNow={handleSyncNow}
+        syncing={syncing}
+        lastSyncedAt={lastSyncedAt}
       />
 
       <TabNav active={tab} onChange={setTabParam} />

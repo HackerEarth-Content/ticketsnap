@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -18,14 +19,28 @@ from core.config import settings
 from core.database import db_manager
 from core.users import OAuthNotAllowedError, fastapi_users
 from models.users import UserRead, UserUpdate
+from pipeline.sync import trigger_sync
 
 logger = logging.getLogger(__name__)
+
+_SYNC_INTERVAL_SECONDS = 10 * 60
+
+
+async def _sync_forever() -> None:
+    while True:
+        try:
+            await trigger_sync()
+        except Exception:
+            logger.exception("Scheduled ticket sync failed")
+        await asyncio.sleep(_SYNC_INTERVAL_SECONDS)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await db_manager.initialize()
+    sync_task = asyncio.create_task(_sync_forever())
     yield
+    sync_task.cancel()
     await db_manager.close()
 
 
