@@ -1,0 +1,24 @@
+[project]
+name = "ticketsnap"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "sairevanth-HE", email = "sai.revanth@hackerearth.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.14.3",
+    "alembic>=1.19.2",
+    "fastapi>=0.141.1",
+    "fastapi-users[sqlalchemy]>=15.0.5",
+    "httpx-oauth>=0.17.0",
+    "psycopg[binary]>=3.3.5",
+    "pydantic-settings>=2.15.0",
+    "python-dotenv>=1.2.3",
+    "sqlalchemy>=2.0.52",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[tool.uv]
+package = false
