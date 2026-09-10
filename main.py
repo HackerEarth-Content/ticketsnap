@@ -17,7 +17,7 @@ from api.auth_routes import router as auth_router
 from api.dashboard_routes import router as dashboard_router
 from core.config import settings
 from core.database import db_manager
-from core.users import OAuthNotAllowedError, fastapi_users
+from core.users import fastapi_users
 from models.users import UserRead, UserUpdate
 from pipeline.sync import trigger_sync
 
@@ -89,13 +89,6 @@ async def security_headers(request: Request, call_next):
 async def value_error_handler(request: Request, exc: ValueError):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
-
-# A user who isn't on ALLOWED_EMAILS reaches this mid-OAuth-flow -- send them
-# back to the frontend (not a bare 403 text page) with a flag it can turn
-# into a real message. Mirrors Ticket-Hub's oauth_not_allowed_handler.
-@app.exception_handler(OAuthNotAllowedError)
-async def oauth_not_allowed_handler(request: Request, exc: OAuthNotAllowedError):
-    return RedirectResponse(f"{settings.FRONTEND_URL}?authError=not_allowed", status_code=302)
 
 
 # Google's side of the OAuth callback can fail after the code exchange --
