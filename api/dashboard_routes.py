@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
 from core.orm import FeatureComponent, Ticket
+from core.rate_limit import rate_limit
 from core.users import current_active_user
 from pipeline.db_writer import get_cursor
 from pipeline.models import CONTENT_REQUEST_PREFIX, ONCALL_WORKFLOW, PRIORITY_ORDER, extract_reported_by
@@ -228,7 +229,7 @@ async def content_requests(
 # Manual override for the 10-minute background sync (see main.py's
 # _sync_forever) -- shares its lock via pipeline.sync.trigger_sync, so this
 # never races the scheduled run.
-@router.post("/sync")
+@router.post("/sync", dependencies=[Depends(rate_limit(3, 60))])
 async def sync_now(user=Depends(current_active_user)):
     return await trigger_sync()
 

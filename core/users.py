@@ -3,6 +3,8 @@ same allowlist behavior, same cookie/JWT backend -- trimmed to Google-only"""
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import os
 from pathlib import Path
 from typing import Any
@@ -22,7 +24,17 @@ from core.config import settings
 from core.database import get_session
 from core.orm import OAuthAccount, User
 
-SECRET = settings.USER_SECRET
+# USER_SECRET is the one root secret we're given; derive a distinct key per
+# purpose (HKDF-style HMAC) so a leak of one (e.g. an OAuth state token) can't
+# be replayed as another (e.g. a session JWT or password-reset token).
+def _derive_secret(purpose: str) -> str:
+    return hmac.new(settings.USER_SECRET.encode(), purpose.encode(), hashlib.sha256).hexdigest()
+
+
+SECRET = _derive_secret("oauth-state")
+_JWT_SECRET = _derive_secret("session-jwt")
+_RESET_SECRET = _derive_secret("password-reset")
+_VERIFY_SECRET = _derive_secret("email-verify")
 
 _ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 
@@ -39,7 +51,10 @@ def _is_email_allowed(email: str) -> bool:
     )
     allowed = {e.strip().lower() for e in raw.split(",") if e.strip()}
     if not allowed:
-        return True
+        # Fail closed in production -- an empty/missing allowlist must never
+        # silently open sign-in to any Google account. Dev keeps the old
+        # allow-all convenience since there's no real data to protect there.
+        return settings.ENVIRONMENT != "production"
     return email.strip().lower() in allowed
 
 
@@ -50,8 +65,8 @@ google_oauth_client = GoogleOAuth2(
 
 
 class UserManager(BaseUserManager[User, str]):
-    reset_password_token_secret = SECRET
-    verification_token_secret = SECRET
+    reset_password_token_secret = _RESET_SECRET
+    verification_token_secret = _VERIFY_SECRET
 
     def parse_id(self, value: Any) -> str:
         return str(value)
@@ -124,7 +139,7 @@ oauth_cookie_transport = RedirectCookieTransport(
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
+    return JWTStrategy(secret=_JWT_SECRET, lifetime_seconds=3600)
 
 
 oauth_auth_backend = AuthenticationBackend(

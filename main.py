@@ -61,6 +61,27 @@ app.add_middleware(
 )
 
 
+# React sets inline `style={{...}}` attributes (see frontend/src), so
+# style-src needs 'unsafe-inline'; nothing else in the bundle is inline.
+_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Content-Security-Policy"] = _CSP
+    if settings.ENVIRONMENT == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return response
+
+
 # A bad `period` query param (api/dashboard_routes.py's resolve_period) is a
 # client error, not a server fault -- surface it as a clean 400 instead of an
 # unhandled-exception 500.

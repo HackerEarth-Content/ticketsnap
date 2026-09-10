@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from fastapi_users.router.oauth import CSRF_TOKEN_KEY, generate_csrf_token, generate_state_token
 
 from core.config import settings
+from core.rate_limit import rate_limit
 from core.users import SECRET, fastapi_users, google_oauth_client, oauth_auth_backend
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -21,7 +22,7 @@ async def logout(
     return await oauth_auth_backend.logout(strategy, user, token)
 
 
-@router.get("/google/login")
+@router.get("/google/login", dependencies=[Depends(rate_limit(10, 60))])
 async def google_login():
     csrf_token = generate_csrf_token()
     state = generate_state_token({CSRF_TOKEN_KEY: csrf_token}, SECRET)
