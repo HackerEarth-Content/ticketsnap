@@ -191,6 +191,7 @@ def _serialize(tickets: list[Ticket], feature_components: list[str]) -> dict:
                 "customer_name": t.customer_name,
                 "content": t.content,
                 "feature_component": t.feature_component,
+                "slack_thread_url": t.slack_thread_url,
                 "reporter_name": extract_reported_by(t.content),
                 "canonical_status": t.canonical_status,
                 "priority": t.priority,

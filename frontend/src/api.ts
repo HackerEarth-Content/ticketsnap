@@ -29,8 +29,6 @@ export const api = {
   // route serves -- both are the oncall query, gated behind sign-in (see
   // api/dashboard_routes.py); no separate call needed.
   oncall: (period: Period) => get<TicketBucket>(`/oncall?period=${encodeURIComponent(period)}`),
-  contentRequests: (period: Period) =>
-    get<TicketBucket>(`/content-requests?period=${encodeURIComponent(period)}`),
   // Overrides the backend's 10-minute scheduled sync -- runs it immediately.
   syncNow: () => post<{ pulled: number; since_ms: number }>("/sync"),
   syncStatus: () => get<{ last_synced_at: string | null }>("/sync-status"),

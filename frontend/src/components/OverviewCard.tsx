@@ -25,7 +25,7 @@ export function OverviewCard({ stats, loading }: Props) {
         ) : (
           <>
             <StatTile label="Total issues" value={formatNumber(stats.total)} />
-            <StatTile label="Open" value={formatNumber(stats.open_count)} />
+            <StatTile label="Pending" value={formatNumber(stats.open_count)} />
             <StatTile label="Closed" value={formatNumber(stats.closed_count)} />
             <StatTile
               label="Median resolution"

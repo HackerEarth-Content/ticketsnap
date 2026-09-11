@@ -5,7 +5,30 @@ import { useQueryNumberParam, useQueryParam } from "../hooks/useQueryParam";
 import { hubspotTicketUrl } from "../format";
 
 const ALL = "all";
+const PENDING = "Pending";
+const CLOSED = "Closed";
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+// Every non-Closed HubSpot stage ("Pending in engineering", "Pending on
+// teams", etc.) reads as one "Pending" bucket in this table.
+function displayStatus(canonicalStatus: string): string {
+  return canonicalStatus === CLOSED ? CLOSED : PENDING;
+}
+
+// slack_thread_url comes from HubSpot's "Slack Link" property -- reject
+// anything but an https Slack link before it reaches an href (blocks
+// javascript: URIs and similar).
+function safeSlackUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/\.$/, "");
+    const isSlackHost = host === "slack.com" || host.endsWith(".slack.com");
+    return parsed.protocol === "https:" && isSlackHost ? url : null;
+  } catch {
+    return null;
+  }
+}
 
 interface Props {
   tickets: Ticket[];
@@ -35,12 +58,12 @@ export function TicketTable({
   reporterFilter,
   onReporterFilterChange,
 }: Props) {
-  const [statusFilter, setStatusFilter] = useQueryParam("status", ALL);
+  const [statusFilter, setStatusFilter] = useQueryParam("status", PENDING);
   const [perPage, setPerPage] = useQueryNumberParam("perPage", 25);
   const [page, setPage] = useQueryNumberParam("page", 1);
 
   const statusOptions = useMemo(
-    () => Array.from(new Set(tickets.map((t) => t.canonical_status))).sort(),
+    () => Array.from(new Set(tickets.map((t) => displayStatus(t.canonical_status)))).sort(),
     [tickets]
   );
   const priorityOptions = useMemo(() => {
@@ -59,7 +82,7 @@ export function TicketTable({
       tickets.filter(
         (t) =>
           (!activeFeatureComponent || t.feature_component === activeFeatureComponent) &&
-          (statusFilter === ALL || t.canonical_status === statusFilter) &&
+          (statusFilter === ALL || displayStatus(t.canonical_status) === statusFilter) &&
           (!priorityFilter || (t.priority ?? "Unknown") === priorityFilter) &&
           (!reporterFilter || (t.reporter_name ?? "Unknown") === reporterFilter)
       ),
@@ -190,6 +213,7 @@ export function TicketTable({
                 <th>Reporter</th>
                 <th>Product area</th>
                 <th>Status</th>
+                <th>Slack thread</th>
                 <th>Priority</th>
                 <th># days open</th>
               </tr>
@@ -207,7 +231,16 @@ export function TicketTable({
                   <td>{formatDate(t.closed_at)}</td>
                   <td>{t.reporter_name ?? "—"}</td>
                   <td>{t.feature_component ?? "—"}</td>
-                  <td>{t.canonical_status}</td>
+                  <td>{displayStatus(t.canonical_status)}</td>
+                  <td>
+                    {safeSlackUrl(t.slack_thread_url) ? (
+                      <a href={safeSlackUrl(t.slack_thread_url)!} target="_blank" rel="noopener noreferrer">
+                        Slack issue
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td>
                     <span className={`chip ${priorityChip(t.priority)}`}>{priorityDisplay(t.priority)}</span>
                   </td>

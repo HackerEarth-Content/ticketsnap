@@ -2,18 +2,15 @@ import type { DashboardTab } from "../types";
 
 // Oncall and Engineering Issues are the same query server-side (see
 // api/dashboard_routes.py) -- one "Engineering" tab covers both.
-const TABS: { key: DashboardTab; label: string }[] = [
-  { key: "engineering", label: "Engineering" },
-  { key: "content", label: "Content" },
-];
+// ponytail: Content tab disabled per request; the /content-requests API route
+// still exists server-side, just nothing links to it here.
+const TABS: { key: DashboardTab; label: string }[] = [{ key: "engineering", label: "Engineering" }];
 
 interface Props {
   active: DashboardTab;
   onChange: (tab: DashboardTab) => void;
 }
 
-/** The whole app is sign-in gated (see App.tsx), so there's no auth-gated
- * tab to drop from the nav anymore -- both tabs always render. */
 export function TabNav({ active, onChange }: Props) {
   return (
     <nav className="tab-nav" role="tablist" aria-label="Ticket buckets">

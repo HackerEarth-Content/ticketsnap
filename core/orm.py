@@ -36,6 +36,8 @@ class Ticket(Base):
     # line in content. Oncall and Engineering Issues share this same value;
     # Engineering Issues is the same bucket, just gated behind Google login.
     slack_workflow: Mapped[str | None] = mapped_column(index=True)
+    # HubSpot's "Slack Link" property -- permalink to the Slack thread the ticket came from.
+    slack_thread_url: Mapped[str | None]
     # Product area, parsed from the `Feature/Component:` line in content.
     feature_component: Mapped[str | None] = mapped_column(index=True)
 

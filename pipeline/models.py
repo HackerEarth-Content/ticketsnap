@@ -80,6 +80,7 @@ class NormalizedTicket:
     content: str | None
     customer_name: str | None
     slack_workflow: str | None
+    slack_thread_url: str | None
     feature_component: str | None
     priority: str | None
     canonical_status: str
@@ -101,6 +102,7 @@ class NormalizedTicket:
             content=_unescape(content),
             customer_name=_unescape(resolve_customer_name(props)),
             slack_workflow=extract_workflow(content),
+            slack_thread_url=props.get("slack_link") or None,
             feature_component=extract_feature_component(content),
             priority=props.get("hs_ticket_priority") or None,
             canonical_status="Closed" if props.get("closed_date") else (stage_label or "Unknown"),

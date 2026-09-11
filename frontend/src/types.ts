@@ -12,6 +12,7 @@ export interface Ticket {
   customer_name: string | null;
   content: string | null;
   feature_component: string | null;
+  slack_thread_url: string | null;
   reporter_name: string | null;
   canonical_status: string;
   priority: string | null;
@@ -36,7 +37,7 @@ export interface TicketBucket {
   stats: TicketStats;
 }
 
-export type DashboardTab = "engineering" | "content";
+export type DashboardTab = "engineering";
 
 // Same period vocabulary as Ticket-Hub's types.ts.
 export type Period = "today" | "yesterday" | "week" | "month" | `custom:${string}:${string}`;

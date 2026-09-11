@@ -18,11 +18,9 @@ import type { DashboardTab, Period, TicketBucket } from "./types";
 
 const TAB_TITLE: Record<DashboardTab, string> = {
   engineering: "Engineering",
-  content: "Content",
 };
 const TAB_COLOR: Record<DashboardTab, string> = {
   engineering: "var(--accent-blue)",
-  content: "var(--accent-magenta)",
 };
 const KNOWN_PERIODS = ["today", "yesterday", "week", "month"];
 
@@ -36,7 +34,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 };
 
 function isDashboardTab(value: string): value is DashboardTab {
-  return value === "engineering" || value === "content";
+  return value === "engineering";
 }
 
 function isPeriod(value: string): value is Period {
@@ -119,9 +117,8 @@ export default function App() {
     setPriorityParam("");
     setReporterParam("");
 
-    const fetchBucket = tab === "engineering" ? api.oncall(period) : api.contentRequests(period);
-
-    fetchBucket
+    api
+      .oncall(period)
       .then((data) => {
         if (!cancelled) setBucket(data);
       })
@@ -209,6 +206,18 @@ export default function App() {
 
         <SectionHeading title={TAB_TITLE[tab]} color={TAB_COLOR[tab]} />
 
+        <TicketTable
+          tickets={bucket?.tickets ?? []}
+          featureComponents={bucket?.feature_components ?? []}
+          loading={loading}
+          activeFeatureComponent={activeFeatureComponent}
+          onFeatureComponentChange={(fc) => setFcParam(fc ?? "")}
+          priorityFilter={priorityFilter}
+          onPriorityFilterChange={(p) => setPriorityParam(p ?? "")}
+          reporterFilter={reporterFilter}
+          onReporterFilterChange={(r) => setReporterParam(r ?? "")}
+        />
+
         <OverviewCard stats={bucket?.stats ?? null} loading={loading} />
 
         <div className={tab === "engineering" ? "grid cols-2" : undefined} style={{ marginBottom: 14 }}>
@@ -237,18 +246,6 @@ export default function App() {
           />
           <ResolutionByPriorityCard stats={bucket?.stats ?? null} loading={loading} />
         </div>
-
-        <TicketTable
-          tickets={bucket?.tickets ?? []}
-          featureComponents={bucket?.feature_components ?? []}
-          loading={loading}
-          activeFeatureComponent={activeFeatureComponent}
-          onFeatureComponentChange={(fc) => setFcParam(fc ?? "")}
-          priorityFilter={priorityFilter}
-          onPriorityFilterChange={(p) => setPriorityParam(p ?? "")}
-          reporterFilter={reporterFilter}
-          onReporterFilterChange={(r) => setReporterParam(r ?? "")}
-        />
       </main>
 
       <footer className="note">
