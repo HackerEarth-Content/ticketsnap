@@ -469,6 +469,7 @@ main.content {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  color: var(--ink);
 }
 .bar-row-clickable {
   width: 100%;

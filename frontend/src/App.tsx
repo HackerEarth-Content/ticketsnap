@@ -206,19 +206,21 @@ export default function App() {
 
         <SectionHeading title={TAB_TITLE[tab]} color={TAB_COLOR[tab]} />
 
-        <TicketTable
-          tickets={bucket?.tickets ?? []}
-          featureComponents={bucket?.feature_components ?? []}
-          loading={loading}
-          activeFeatureComponent={activeFeatureComponent}
-          onFeatureComponentChange={(fc) => setFcParam(fc ?? "")}
-          priorityFilter={priorityFilter}
-          onPriorityFilterChange={(p) => setPriorityParam(p ?? "")}
-          reporterFilter={reporterFilter}
-          onReporterFilterChange={(r) => setReporterParam(r ?? "")}
-        />
-
         <OverviewCard stats={bucket?.stats ?? null} loading={loading} />
+
+        <div style={{ marginBottom: 14 }}>
+          <TicketTable
+            tickets={bucket?.tickets ?? []}
+            featureComponents={bucket?.feature_components ?? []}
+            loading={loading}
+            activeFeatureComponent={activeFeatureComponent}
+            onFeatureComponentChange={(fc) => setFcParam(fc ?? "")}
+            priorityFilter={priorityFilter}
+            onPriorityFilterChange={(p) => setPriorityParam(p ?? "")}
+            reporterFilter={reporterFilter}
+            onReporterFilterChange={(r) => setReporterParam(r ?? "")}
+          />
+        </div>
 
         <div className={tab === "engineering" ? "grid cols-2" : undefined} style={{ marginBottom: 14 }}>
           {tab === "engineering" && (
