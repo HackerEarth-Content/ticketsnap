@@ -18,7 +18,13 @@ from core.orm import FeatureComponent, Ticket
 from core.rate_limit import rate_limit
 from core.users import current_active_user
 from pipeline.db_writer import get_cursor
-from pipeline.models import CONTENT_REQUEST_PREFIX, ONCALL_WORKFLOW, PRIORITY_ORDER, extract_reported_by
+from pipeline.models import (
+    CONTENT_REQUEST_PREFIX,
+    NO_ACTION_NEEDED_RESOLUTION,
+    ONCALL_WORKFLOW,
+    PRIORITY_ORDER,
+    extract_reported_by,
+)
 from pipeline.sync import trigger_sync
 
 router = APIRouter(prefix="/dashboard")
@@ -111,7 +117,11 @@ async def _fetch_bucket(
     session: AsyncSession, period: str, *, oncall: bool = False, content_request: bool = False
 ) -> list[Ticket]:
     period_start, period_end = resolve_period(period)
-    stmt = select(Ticket).where(Ticket.created_at.between(period_start, period_end))
+    stmt = (
+        select(Ticket)
+        .where(Ticket.created_at.between(period_start, period_end))
+        .where(Ticket.final_resolution.is_distinct_from(NO_ACTION_NEEDED_RESOLUTION))
+    )
     if oncall:
         stmt = stmt.where(Ticket.slack_workflow.ilike(ONCALL_WORKFLOW))
     if content_request:

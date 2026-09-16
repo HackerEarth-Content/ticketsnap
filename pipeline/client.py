@@ -28,6 +28,7 @@ TICKET_PROPERTIES = [
     "other_blackops_account_name",
     "hs_primary_company_name",
     "slack_link",
+    "final_resolution",
 ]
 
 # Same chunking rationale as Ticket-Hub's client.py: HubSpot search caps any

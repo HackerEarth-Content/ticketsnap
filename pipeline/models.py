@@ -26,6 +26,10 @@ CONTENT_REQUEST_PREFIX = "content request"
 
 PRIORITY_ORDER = ["URGENT", "HIGH", "MEDIUM", "LOW"]
 
+# HubSpot's `final_resolution` value for tickets that needed no action --
+# these are excluded from every tab, see db_writer.py / dashboard_routes.py.
+NO_ACTION_NEEDED_RESOLUTION = "No Action Taken"
+
 
 def _unescape(value: str | None) -> str | None:
     return html.unescape(value) if value else value
@@ -83,6 +87,7 @@ class NormalizedTicket:
     slack_thread_url: str | None
     feature_component: str | None
     priority: str | None
+    final_resolution: str | None
     canonical_status: str
     stage_label: str | None
     created_at: datetime | None
@@ -105,6 +110,7 @@ class NormalizedTicket:
             slack_thread_url=props.get("slack_link") or None,
             feature_component=extract_feature_component(content),
             priority=props.get("hs_ticket_priority") or None,
+            final_resolution=props.get("final_resolution") or None,
             canonical_status="Closed" if props.get("closed_date") else (stage_label or "Unknown"),
             stage_label=stage_label,
             created_at=_parse_iso(props.get("createdate")),

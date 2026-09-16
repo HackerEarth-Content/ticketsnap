@@ -42,6 +42,9 @@ class Ticket(Base):
     feature_component: Mapped[str | None] = mapped_column(index=True)
 
     priority: Mapped[str | None]  # native hs_ticket_priority (Low/Medium/High/Urgent)
+    # HubSpot's `final_resolution` -- tickets valued "No Action Taken" are
+    # excluded from every tab's query, see api/dashboard_routes.py.
+    final_resolution: Mapped[str | None]
     canonical_status: Mapped[str] = mapped_column(default="Unknown")
     stage_label: Mapped[str | None]
 
