@@ -23,6 +23,7 @@ from pipeline.models import (
     NO_ACTION_NEEDED_RESOLUTION,
     ONCALL_WORKFLOW,
     PRIORITY_ORDER,
+    TICKET_VALIDITY_LABELS,
     extract_reported_by,
 )
 from pipeline.sync import trigger_sync
@@ -205,11 +206,15 @@ def _serialize(tickets: list[Ticket], feature_components: list[str]) -> dict:
                 "reporter_name": extract_reported_by(t.content),
                 "canonical_status": t.canonical_status,
                 "priority": t.priority,
+                "ticket_validity": t.ticket_validity,
                 "days_open": _days_open(t),
             }
             for t in tickets
         ],
         "feature_components": feature_components,
+        "ticket_validity_options": [
+            {"value": value, "label": label} for value, label in TICKET_VALIDITY_LABELS.items()
+        ],
     }
 
 

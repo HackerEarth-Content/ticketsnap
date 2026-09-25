@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Ticket } from "../types";
+import type { Ticket, TicketValidityOption } from "../types";
 import { PRIORITY_ORDER, priorityChip, priorityDisplay } from "../priority";
 import { useQueryNumberParam, useQueryParam } from "../hooks/useQueryParam";
 import { hubspotTicketUrl } from "../format";
@@ -40,6 +40,9 @@ interface Props {
   onPriorityFilterChange: (p: string | null) => void;
   reporterFilter: string | null;
   onReporterFilterChange: (r: string | null) => void;
+  ticketValidityOptions: TicketValidityOption[];
+  validityFilter: string | null;
+  onValidityFilterChange: (v: string | null) => void;
 }
 
 function formatDate(iso: string | null): string {
@@ -57,6 +60,9 @@ export function TicketTable({
   onPriorityFilterChange,
   reporterFilter,
   onReporterFilterChange,
+  ticketValidityOptions,
+  validityFilter,
+  onValidityFilterChange,
 }: Props) {
   const [statusFilter, setStatusFilter] = useQueryParam("status", PENDING);
   const [perPage, setPerPage] = useQueryNumberParam("perPage", 25);
@@ -76,6 +82,10 @@ export function TicketTable({
     () => Array.from(new Set(tickets.map((t) => t.reporter_name ?? "Unknown"))).sort(),
     [tickets]
   );
+  const validityLabel = useMemo(() => {
+    const map = new Map(ticketValidityOptions.map((o) => [o.value, o.label]));
+    return (value: string | null) => (value ? map.get(value) ?? value : "—");
+  }, [ticketValidityOptions]);
 
   const filtered = useMemo(
     () =>
@@ -84,9 +94,10 @@ export function TicketTable({
           (!activeFeatureComponent || t.feature_component === activeFeatureComponent) &&
           (statusFilter === ALL || displayStatus(t.canonical_status) === statusFilter) &&
           (!priorityFilter || (t.priority ?? "Unknown") === priorityFilter) &&
-          (!reporterFilter || (t.reporter_name ?? "Unknown") === reporterFilter)
+          (!reporterFilter || (t.reporter_name ?? "Unknown") === reporterFilter) &&
+          (!validityFilter || t.ticket_validity === validityFilter)
       ),
-    [tickets, activeFeatureComponent, statusFilter, priorityFilter, reporterFilter]
+    [tickets, activeFeatureComponent, statusFilter, priorityFilter, reporterFilter, validityFilter]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -182,6 +193,24 @@ export function TicketTable({
           </select>
         </label>
         <label className="field-label">
+          <span>Ticket validity</span>
+          <select
+            className="select"
+            value={validityFilter ?? ALL}
+            onChange={(e) => {
+              onValidityFilterChange(e.target.value === ALL ? null : e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value={ALL}>All ticket validity</option>
+            {ticketValidityOptions.map((v) => (
+              <option key={v.value} value={v.value}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-label">
           <span>Per page</span>
           <select
             className="select"
@@ -215,6 +244,7 @@ export function TicketTable({
                 <th>Status</th>
                 <th>Slack thread</th>
                 <th>Priority</th>
+                <th>Ticket validity</th>
                 <th># days open</th>
               </tr>
             </thead>
@@ -244,6 +274,7 @@ export function TicketTable({
                   <td>
                     <span className={`chip ${priorityChip(t.priority)}`}>{priorityDisplay(t.priority)}</span>
                   </td>
+                  <td>{validityLabel(t.ticket_validity)}</td>
                   <td>{t.days_open ?? "—"}</td>
                 </tr>
               ))}

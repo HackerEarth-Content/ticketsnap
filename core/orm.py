@@ -45,6 +45,9 @@ class Ticket(Base):
     # HubSpot's `final_resolution` -- tickets valued "No Action Taken" are
     # excluded from every tab's query, see api/dashboard_routes.py.
     final_resolution: Mapped[str | None]
+    # HubSpot's `ticket_validity` -- Invalid Issue / Valid Issue / Service
+    # Request / Data Request / Feature Request.
+    ticket_validity: Mapped[str | None]
     canonical_status: Mapped[str] = mapped_column(default="Unknown")
     stage_label: Mapped[str | None]
 

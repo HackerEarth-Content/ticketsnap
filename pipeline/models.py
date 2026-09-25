@@ -30,6 +30,19 @@ PRIORITY_ORDER = ["URGENT", "HIGH", "MEDIUM", "LOW"]
 # these are excluded from every tab, see db_writer.py / dashboard_routes.py.
 NO_ACTION_NEEDED_RESOLUTION = "No Action Taken"
 
+# HubSpot's `ticket_validity` property: internal value -> display label. The
+# internal value ("Valid"/"Invalid") is what's actually stored on the ticket
+# and what the dashboard filters against; the label is what HubSpot shows
+# users in its own UI (confirmed against the live property definition via
+# GET /crm/v3/properties/tickets/ticket_validity).
+TICKET_VALIDITY_LABELS = {
+    "Valid": "Valid Issue",
+    "Invalid": "Invalid Issue",
+    "Service Request": "Service Request",
+    "Data Request": "Data Request",
+    "Feature Request": "Feature Request",
+}
+
 
 def _unescape(value: str | None) -> str | None:
     return html.unescape(value) if value else value
@@ -88,6 +101,7 @@ class NormalizedTicket:
     feature_component: str | None
     priority: str | None
     final_resolution: str | None
+    ticket_validity: str | None
     canonical_status: str
     stage_label: str | None
     created_at: datetime | None
@@ -111,6 +125,7 @@ class NormalizedTicket:
             feature_component=extract_feature_component(content),
             priority=props.get("hs_ticket_priority") or None,
             final_resolution=props.get("final_resolution") or None,
+            ticket_validity=props.get("ticket_validity") or None,
             canonical_status="Closed" if props.get("closed_date") else (stage_label or "Unknown"),
             stage_label=stage_label,
             created_at=_parse_iso(props.get("createdate")),

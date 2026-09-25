@@ -16,6 +16,7 @@ export interface Ticket {
   reporter_name: string | null;
   canonical_status: string;
   priority: string | null;
+  ticket_validity: string | null;
   days_open: number | null;
 }
 
@@ -31,9 +32,15 @@ export interface TicketStats {
   resolved_count_by_priority: Record<string, number>;
 }
 
+export interface TicketValidityOption {
+  value: string;
+  label: string;
+}
+
 export interface TicketBucket {
   tickets: Ticket[];
   feature_components: string[];
+  ticket_validity_options: TicketValidityOption[];
   stats: TicketStats;
 }
 

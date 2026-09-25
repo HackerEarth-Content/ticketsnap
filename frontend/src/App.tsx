@@ -105,6 +105,8 @@ export default function App() {
   const priorityFilter = priorityParam || null;
   const [reporterParam, setReporterParam] = useQueryParam("reporter", "", "");
   const reporterFilter = reporterParam || null;
+  const [validityParam, setValidityParam] = useQueryParam("validity", "", "");
+  const validityFilter = validityParam || null;
 
   // The whole app is gated behind sign-in -- nothing to fetch until we know
   // who's signed in.
@@ -116,6 +118,7 @@ export default function App() {
     setFcParam("");
     setPriorityParam("");
     setReporterParam("");
+    setValidityParam("");
 
     api
       .oncall(period)
@@ -219,6 +222,9 @@ export default function App() {
             onPriorityFilterChange={(p) => setPriorityParam(p ?? "")}
             reporterFilter={reporterFilter}
             onReporterFilterChange={(r) => setReporterParam(r ?? "")}
+            ticketValidityOptions={bucket?.ticket_validity_options ?? []}
+            validityFilter={validityFilter}
+            onValidityFilterChange={(v) => setValidityParam(v ?? "")}
           />
         </div>
 

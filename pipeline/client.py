@@ -29,6 +29,7 @@ TICKET_PROPERTIES = [
     "hs_primary_company_name",
     "slack_link",
     "final_resolution",
+    "ticket_validity",
 ]
 
 # Same chunking rationale as Ticket-Hub's client.py: HubSpot search caps any
