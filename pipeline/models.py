@@ -35,6 +35,11 @@ NO_ACTION_NEEDED_RESOLUTION = "No Action Taken"
 # and what the dashboard filters against; the label is what HubSpot shows
 # users in its own UI (confirmed against the live property definition via
 # GET /crm/v3/properties/tickets/ticket_validity).
+# Sentinel for tickets HubSpot hasn't had ticket_validity set on yet -- lets
+# the dashboard treat "not set" as a normal filterable option instead of a
+# null special-case.
+UNCATEGORIZED_VALIDITY = "not_categorized"
+
 TICKET_VALIDITY_LABELS = {
     "Valid": "Valid Issue",
     "Invalid": "Invalid Issue",
