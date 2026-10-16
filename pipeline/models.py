@@ -21,7 +21,7 @@ _REPORTED_BY_RE = re.compile(r"^Reported By:\s*(.+)$", re.IGNORECASE | re.MULTIL
 # Ticket-Hub's canonical bucketing: an "engg oncall" workflow is Oncall (and,
 # gated, also shows on Engineering Issues); anything else with a Workflow
 # line starting "Content Request" is a Content Request.
-ONCALL_WORKFLOW = "engg oncall"
+ONCALL_WORKFLOWS = ("engg oncall", "support intake - raise ticket")  # old name kept for history
 CONTENT_REQUEST_PREFIX = "content request"
 
 PRIORITY_ORDER = ["URGENT", "HIGH", "MEDIUM", "LOW"]
@@ -88,7 +88,7 @@ def bucket_for(slack_workflow: str | None) -> str | None:
     if not slack_workflow:
         return None
     normalized = slack_workflow.strip().lower()
-    if normalized == ONCALL_WORKFLOW:
+    if normalized in ONCALL_WORKFLOWS:
         return "oncall"
     if normalized.startswith(CONTENT_REQUEST_PREFIX):
         return "content_request"

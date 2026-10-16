@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_session
@@ -21,7 +21,7 @@ from pipeline.db_writer import get_cursor
 from pipeline.models import (
     CONTENT_REQUEST_PREFIX,
     NO_ACTION_NEEDED_RESOLUTION,
-    ONCALL_WORKFLOW,
+    ONCALL_WORKFLOWS,
     PRIORITY_ORDER,
     TICKET_VALIDITY_LABELS,
     UNCATEGORIZED_VALIDITY,
@@ -125,7 +125,7 @@ async def _fetch_bucket(
         .where(Ticket.final_resolution.is_distinct_from(NO_ACTION_NEEDED_RESOLUTION))
     )
     if oncall:
-        stmt = stmt.where(Ticket.slack_workflow.ilike(ONCALL_WORKFLOW))
+        stmt = stmt.where(func.lower(func.trim(Ticket.slack_workflow)).in_(ONCALL_WORKFLOWS))
     if content_request:
         stmt = stmt.where(Ticket.slack_workflow.ilike(f"{CONTENT_REQUEST_PREFIX}%"))
     result = await session.execute(stmt)
